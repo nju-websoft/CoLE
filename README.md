@@ -10,28 +10,9 @@
 
 
 ## Running
-Create folder `checkpoints` and put the pre-trained [BERT](https://huggingface.co/bert-base-cased/tree/main) model into `checkpoints/bert-base-cased`.
+For a given dataset, the first step is to fine-tune a [BERT](https://huggingface.co/bert-base-cased/tree/main) model based on the descriptions of entities, which will be loaded as a basic module before training N-BERT. Then train N-BERT and N-Former, respectively, and the both trained models are used for co-distillation learning.
 
-Take FB15k-237 for example, fine-tune a BERT model based on the descriptions of entities; and put the fine-tuned model into `checkpoints/fb15k-237/bert-pretrained`.
-```
-$ python train_nbert.py --task pretrain --dataset fb15k-237 --device cuda:0 --lm_lr 1e-4
-```
-
-Train N-BERT:
-```
-$ python train_nbert.py --task train ---dataset fb15k-237 --device cuda:0 --lm_lr 5e-5 --add_neighbors
-```
-
-Train N-Former:
-```
-$ python train_nformer.py --task train ---dataset fb15k-237 --device cuda:0 --lm_lr 5e-5 --add_neighbors
-```
-
-Train CoLE:
-```
-$ python train_cole.py --task train ---dataset fb15k-237 --device cuda:0 --alpha 0.5 --beta 0.5
-```
-
+The commands in the folder `scripts` are provided to reproduce the experimental results.
 > If you have any difficulty or question in running code and reproducing experimental results, please email to yliu20.nju@gmail.com.
 
 ## Citation
