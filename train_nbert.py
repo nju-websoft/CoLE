@@ -14,42 +14,14 @@ from code import NBert
 from utils import score2str
 
 
-'''
-pretrain:
-To begin with, if there is not a fine-tuned bert for the dataset, you need to train it first;
-download the pre-trained bert from huggingface, and copy the model to MODEL_PATH[dataset]['pretrain'];
-run 'python train_nbert.py --task pretrain --lm_lr 1e-4' to fine-tune bert;
-then copy the fine-tuned model to MODEL_PATH[dataset]['train'].
-
-train (the default task):
-run 'python train_nbert.py --add_neighbors' to train N-BERT for link prediction by default hyper-parameters.
-
-validate:
-copy the trained model to MODEL_PATH[dataset]['validate'].
-run 'python train_nbert.py --task validate --add_neighbors' to validate the trained model.
-'''
-
-
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-# MODEL_PATH contains paths for models, need to be changed for different tasks
-MODEL_PATH = {
-    'fb15k-237': {
-        'pretrain': 'checkpoints/bert-base-cased',
-        'train': 'checkpoints/fb15k-237/bert-pretrained',
-        'validate': 'output/fb15k-237/CoLE/20220827_222516/nbert',
-    },
-    'wn18rr': {
-        'pretrain': 'checkpoints/bert-base-cased',
-        'train': 'checkpoints/wn18rr/bert-pretrained',
-        'validate': 'output/wn18rr/',
-    }
-}
 
 
 def get_args():
     parser = argparse.ArgumentParser()
     # 1. about training
     parser.add_argument('--task', type=str, default='train', help='pretrain | train | validate')
+    parser.add_argument('--model_path', type=str, default='checkpoints/fb15k-237/bert-pretrained')
     parser.add_argument('--epoch', type=int, default=20, help='epoch')
     parser.add_argument('--batch_size', type=int, default=256, help='batch size')
     parser.add_argument('--device', type=str, default='cuda:3', help='select a gpu like cuda:0')
@@ -76,7 +48,7 @@ def get_args():
     # 1. tokenizer path
     args['tokenizer_path'] = os.path.join(root_path, 'checkpoints', 'bert-base-cased')
     # 2. model path
-    args['model_path'] = os.path.join(root_path, MODEL_PATH[args['dataset']][args['task']])
+    args['model_path'] = os.path.join(root_path, args['model_path'])
     # 3. data path
     args['data_path'] = os.path.join(root_path, 'dataset', args['dataset'])  # 数据集目录
     # 4. output path
@@ -112,7 +84,7 @@ class NBertTrainer:
 
         tokenizer, self.train_dl, self.dev_dl, self.test_dl = self._load_dataset(config)
         self.model = self._load_model(config, tokenizer).to(config['device'])
-        optimizers = self.model.configure_optimizers(total_steps=len(self.train_dl))
+        optimizers = self.model.configure_optimizers(total_steps=len(self.train_dl)*self.epoch)
         self.opt, self.scheduler = optimizers['optimizer'], optimizers['scheduler']
 
         self.log_path = os.path.join(self.output_path, 'log.txt')

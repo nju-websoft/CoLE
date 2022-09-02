@@ -32,7 +32,7 @@ class KGCDataModule:
         self.batch_size = args['batch_size']
         self.num_workers = args['num_workers']
         self.pin_memory = args['pin_memory']
-        self.max_seq_length = args['max_seq_length']
+        self.max_seq_length = args['max_seq_length'] if encode_text else -1
 
         self.add_neighbors = args['add_neighbors']
         self.neighbor_num = args['neighbor_num']

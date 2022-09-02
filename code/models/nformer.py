@@ -41,7 +41,8 @@ class NFormer(nn.Module):
         return np.round(np.mean([loss.item() for loss in outputs]), 4)
 
     def validation_step(self, batch, batch_idx):
-        loss, rank = self.forward(batch)
+        output = self.link_prediction_validation(batch)
+        loss, rank = output['loss'], output['rank']
         return loss.item(), rank
 
     def validation_epoch_end(self, outputs):
@@ -52,6 +53,25 @@ class NFormer(nn.Module):
         loss = np.mean(loss)
         scores = get_scores(rank, loss)
         return scores
+
+    def link_prediction_validation(self, batch):
+        # validate without neighboring triplets will get a higher score
+
+        # 1. prepare data
+        input_ids = batch['struc_data']['input_ids'].to(self.device)  # batch_size * 3
+        context_input_ids = None
+        labels = batch['labels'].to(self.device)  # batch_size
+        filters = batch['filters'].to(self.device)
+
+        # 2. get output from knowformer
+        output = self.bert_encoder(input_ids, context_input_ids, self.use_extra_encoder)
+        origin_logits = output['without_neighbors']
+
+        # 3. compute loss and rank
+        origin_loss = self.loss_fc(origin_logits, labels + self.entity_begin_idx)
+        origin_logits = origin_logits[:, self.entity_begin_idx: self.entity_end_idx]
+        rank = get_ranks(F.softmax(origin_logits, dim=-1), labels, filters)
+        return {'loss': origin_loss, 'rank': rank, 'logits': origin_logits}
 
     def link_prediction(self, batch):
         # 1. prepare data

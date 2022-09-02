@@ -1,0 +1,14 @@
+python train_nbert.py \
+   --task train \
+   --model_path checkpoints/fb15k-237/bert-pretrained \
+   --epoch 20 \
+   --batch_size 256 \
+   --device cuda:1 \
+   --dataset fb15k-237 \
+   --max_seq_length 64 \
+   --add_neighbors \
+   --neighbor_num 3 \
+   --lm_lr 5e-5 \
+   --lm_label_smoothing 0.8 \
+   --num_workers 32 \
+   --pin_memory True

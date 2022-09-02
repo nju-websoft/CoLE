@@ -18,30 +18,18 @@ from utils import save_model, load_model, score2str
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 
-MODEL_PATH = {
-    'fb15k-237': {
-        'nbert': 'output/fb15k-237/N-BERT/20220824_132950/nbert',
-        'nformer': 'output/fb15k-237/N-Former/20220823_202921/avg.bin',
-        # 'nbert': 'output/fb15k-237/CoLE/20220827_222516/nbert',
-        # 'nformer': 'output/fb15k-237/CoLE/20220827_222516/nformer.bin',
-    },
-    'wn18rr': {
-        'nbert': 'checkpoints/wn18rr/',
-        'nformer': 'output/wn18rr/',
-    }
-}
-
-
 def get_args():
     parser = argparse.ArgumentParser()
     # 1. about training
     parser.add_argument('--task', type=str, default='train', help='train | validate')
+    parser.add_argument('--nbert_path', type=str, default='')
+    parser.add_argument('--nformer_path', type=str, default='')
+    parser.add_argument('--alpha', type=float, default=0.5)
+    parser.add_argument('--beta', type=float, default=0.5)
     parser.add_argument('--epoch', type=int, default=20, help='epoch')
     parser.add_argument('--batch_size', type=int, default=256, help='batch size')
     parser.add_argument('--device', type=str, default='cuda:3', help='select a gpu like cuda:0')
     parser.add_argument('--dataset', type=str, default='fb15k-237', help='select a dataset: fb15k-237 or wn18rr')
-    parser.add_argument('--alpha', type=float, default=0.5)
-    parser.add_argument('--beta', type=float, default=0.5)
     parser.add_argument('--max_seq_length', type=int, default=64, help='max sequence length for inputs to bert')
     # about neighbors
     parser.add_argument('--extra_encoder', action='store_true', default=False)
@@ -52,22 +40,9 @@ def get_args():
     # text encoder
     parser.add_argument('--lm_lr', type=float, default=1e-5, help='learning rate for language model')
     parser.add_argument('--lm_label_smoothing', type=float, default=0.8, help='label smoothing for language model')
-    parser.add_argument('--lm_max_grad_norm', type=float, default=3.0, help='max norm for language model')
     # struc encoder
     parser.add_argument('--kge_lr', type=float, default=5e-5)
     parser.add_argument('--kge_label_smoothing', type=float, default=0.8)
-    parser.add_argument('--kge_max_grad_norm', type=float, default=1.0)
-    # struc encoder config
-    parser.add_argument('--num_hidden_layers', type=int, default=2)
-    parser.add_argument('--num_attention_heads', type=int, default=2)
-    parser.add_argument('--input_dropout_prob', type=float, default=0.7)
-    parser.add_argument('--attention_dropout_prob', type=float, default=0.1)
-    parser.add_argument('--context_dropout_prob', type=float, default=0.1)
-    parser.add_argument('--hidden_dropout_prob', type=float, default=0.1)
-    parser.add_argument('--hidden_size', type=int, default=256)
-    parser.add_argument('--intermediate_size', type=int, default=2048)
-    parser.add_argument('--residual_dropout_prob', type=float, default=0.)
-    parser.add_argument('--initializer_range', type=float, default=0.02)
     # 2. unimportant parameters, only need to change when GPUs change
     parser.add_argument('--num_workers', type=int, default=32, help='num workers for Dataloader')
     parser.add_argument('--pin_memory', type=bool, default=True, help='pin memory')
@@ -80,8 +55,8 @@ def get_args():
     # 1. tokenizer path
     args['tokenizer_path'] = os.path.join(root_path, 'checkpoints', 'bert-base-cased')
     # 2. model path
-    args['nbert_path'] = os.path.join(root_path, MODEL_PATH[args['dataset']]['nbert'])
-    args['nformer_path'] = os.path.join(root_path, MODEL_PATH[args['dataset']]['nformer'])
+    args['nbert_path'] = os.path.join(root_path, args['nbert_path'])
+    args['nformer_path'] = os.path.join(root_path, args['nformer_path'])
     # 3. data path
     args['data_path'] = os.path.join(root_path, 'dataset', args['dataset'])  # 数据集目录
     # 4. output path
@@ -104,7 +79,7 @@ def get_args():
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
-
+    torch.backends.cudnn.deterministic = True
     return args
 
 

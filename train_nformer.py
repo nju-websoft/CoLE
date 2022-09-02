@@ -13,29 +13,14 @@ from code import NFormer, Knowformer
 from utils import save_model, load_model, score2str, swa
 
 
-'''
-train:
-run 'python train_nformer.py --add_neighbors' to train N-Former for link prediction by default hyper-parameters
-we save the best 20 models for swa, the best model is named nformer.bin, the swa model is named avg.bin
-
-validate:
-copy the trained model to MODEL_PATH
-run 'python train_nformer.py --task validate'
-'''
-
-
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-MODEL_PATH = {
-    'fb15k-237': 'output/fb15k-237/N-Former/20220823_202921/avg.bin',
-    # 'fb15k-237': 'output/fb15k-237/CoLE/20220827_222516/nformer.bin',
-    'wn18rr': 'output/wn18rr/',
-}
 
 
 def get_args():
     parser = argparse.ArgumentParser()
     # 1. about training
     parser.add_argument('--task', type=str, default='train', help='train | validate')
+    parser.add_argument('--model_path', type=str, default='', help='load saved model for validate')
     parser.add_argument('--epoch', type=int, default=600, help='epoch')
     parser.add_argument('--batch_size', type=int, default=2048, help='batch size')
     parser.add_argument('--device', type=str, default='cuda:3', help='select a gpu like cuda:0')
@@ -73,7 +58,7 @@ def get_args():
     args['tokenizer_path'] = os.path.join(root_path, 'checkpoints', 'bert-base-cased')
     # 2. saved model_path
     if args['task'] == 'validate':
-        args['model_path'] = os.path.join(root_path, MODEL_PATH[args['dataset']])
+        args['model_path'] = os.path.join(root_path, args['model_path'])
     # 3. data path
     args['data_path'] = os.path.join(root_path, 'dataset', args['dataset'])
     # 4. output path
@@ -87,8 +72,6 @@ def get_args():
     # save hyper params
     with open(os.path.join(args['output_path'], 'args.txt'), 'w') as f:
         json.dump(args, f, indent=4, ensure_ascii=False)
-    for k in args:
-        print(f'{k}: {args[k]}')
 
     # set random seed
     seed = 2022

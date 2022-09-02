@@ -8,7 +8,7 @@ def save_model(config: dict, model: torch.nn.Module, model_path: str):
 
 
 def load_model(model_path: str, device: str):
-    # 加载保存的knowformer模型
+    # load the trained Knowformer model
     print(f'Loading N-Former from {model_path}')
     state_dict = torch.load(model_path, map_location=device)
     model_config = state_dict['config']
@@ -18,6 +18,12 @@ def load_model(model_path: str, device: str):
 
 
 def swa(output_path, device):
+    """
+    we save the best 20 models, load these model and average parameters
+    :param output_path:
+    :param device:
+    :return:
+    """
     files = os.listdir(output_path)
     files = [file_name for file_name in files if file_name.startswith('epoch_')]
 

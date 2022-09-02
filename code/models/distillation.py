@@ -155,7 +155,7 @@ class CoLE(nn.Module):
         return np.round(np.mean(text_losses), 2), np.round(np.mean(struc_losses), 2)
 
     def validation_step(self, batch, batch_idx):
-        output = self.co_distill(batch)
+        output = self.co_distill_validation(batch)
 
         text_loss, text_output = output['text_loss'], output['text_output']
         text_rank, text_logits = text_output['rank'], text_output['logits']
@@ -187,6 +187,32 @@ class CoLE(nn.Module):
         struc_score = get_scores(rank2, loss2)
         cole_score = get_scores(rank3, loss1+loss2)
         return text_score, struc_score, cole_score
+
+    def co_distill_validation(self, batch_data):
+        # 1. encode with text encoder and struc encoder respectively, output: {loss, rank, logits}
+        text_output = self.text_encoder.link_prediction(batch_data)
+        struc_output = self.struc_encoder.link_prediction_validation(batch_data)
+
+        # 2. calculate the distillation loss
+        labels = batch_data['labels'].to(self.device)
+
+        # logits: (batch_size, vocab_size)
+        text_logits = text_output['logits']
+        struc_logits = struc_output['logits']
+
+        # 3.2 decoupled distillation loss
+        text_cls_loss = text_output['loss']
+        struc_cls_loss = struc_output['loss']
+        text_kd_loss = decoupled_distillation_loss(text_logits, struc_logits.detach(), labels)
+        struc_kd_loss = decoupled_distillation_loss(struc_logits, text_logits.detach(), labels)
+
+        text_loss = (1 - self.alpha) * text_cls_loss + self.alpha * text_kd_loss
+        struc_loss = (1 - self.beta) * struc_cls_loss + self.beta * struc_kd_loss
+
+        return {
+            'text_loss': text_loss, 'text_output': text_output,
+            'struc_loss': struc_loss, 'struc_output': struc_output
+        }
 
     def co_distill(self, batch_data):
         # 1. encode with text encoder and struc encoder respectively, output: {loss, rank, logits}
