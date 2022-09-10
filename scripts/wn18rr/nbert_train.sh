@@ -1,0 +1,14 @@
+python train_nbert.py \
+   --task train \
+   --model_path checkpoints/wn18rr/bert-pretrained \
+   --epoch 30 \
+   --batch_size 256 \
+   --device cuda:3 \
+   --dataset wn18rr \
+   --max_seq_length 64 \
+   --add_neighbors \
+   --neighbor_num 3 \
+   --lm_lr 1e-4 \
+   --lm_label_smoothing 0.8 \
+   --num_workers 32 \
+   --pin_memory True
